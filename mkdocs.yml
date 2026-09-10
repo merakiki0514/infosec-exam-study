@@ -1,6 +1,6 @@
 site_name: 정보보안기사 실기 스터디
 site_description: 정보보안기사 실기 시험 대비 개념 정리 · 기출문제 · 예상문제
-site_url: ""
+site_url: "https://merakiki0514.github.io/infosec-exam-study/"
 
 theme:
   name: material
