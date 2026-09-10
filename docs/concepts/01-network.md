@@ -73,6 +73,24 @@
 3. 점검 대상 NTP 서버가 monlist 명령을 허용하는지 여부를 정기적으로 점검
 4. 보안장비(방화벽)를 이용하여 100byte 이상의 NTP 서버 응답 패킷을 차단
 
+### 1-4. DRDoS (Distributed Reflection DoS)
+
+| 항목 | 내용 |
+|---|---|
+| 정의 | 공격자가 출발지 IP를 공격대상 IP로 위조(IP Spoofing)하여 다수의 반사서버(Reflector)로 요청정보를 전송, 공격대상은 반사서버로부터 다수의 응답을 받아 서비스 거부 상태가 되는 공격 유형 |
+| 핵심 개념 2가지 | **반사(Reflection)**: 위조된 출발지 주소로 제3의 서버(반사서버)에 요청을 보내 그 응답이 공격대상으로 향하게 하는 것 / **증폭(Amplification)**: 반사서버의 응답 크기가 요청보다 훨씬 커서 공격 트래픽이 증폭되는 것 |
+
+**DRDoS 공격 유형 3가지**
+
+| 유형 | 방식 |
+|---|---|
+| TCP 방식 | TCP의 연결설정과정(3-Way Handshake)의 취약점을 이용 — 위조된 출발지 주소의 SYN 패킷을 반사서버(TCP 서버)로 전달하여 SYN+ACK 응답 패킷이 공격대상으로 향하도록 함 |
+| ICMP 방식 | ICMP 프로토콜의 Echo Request와 Echo Reply를 이용 — 위조된 주소의 Echo Request를 반사서버로 전달하여 Echo Reply가 공격대상으로 향하도록 함(Smurf 공격이 대표적) |
+| UDP 방식 | UDP 프로토콜 서비스를 제공하는 서버(**DNS**, NTP, SNMP, CHARGEN 등)를 반사서버로 이용하여 그 응답이 공격대상으로 향하도록 함 — 가장 대표적인 반사서버는 DNS 서버(53/udp) |
+
+!!! important "핵심"
+    DRDoS는 NTP DDoS·DNS 증폭 공격의 상위 개념입니다. "반사(Reflection) + 증폭(Amplification)"이라는 키워드로 정의를 서술하고, UDP 기반 반사서버 종류(DNS/NTP/SNMP/CHARGEN)를 예시로 들면 좋은 답안이 됩니다.
+
 ## 2. 네트워크 스니핑 & 탐지
 
 > 출제 이유: 스니핑은 수동적 공격으로 탐지가 어렵다는 특성 때문에 방어 방법과 탐지 방법이 함께 출제됩니다. Promiscuous Mode 개념과 탐지 방법을 반드시 숙지해야 합니다.
@@ -329,6 +347,51 @@
 !!! tip "연결 고리"
     Smurf 공격 대응 방안의 "ingress filtering(uRPF) 적용"이 바로 이 절의 내용입니다. IP Spoofing을 이용하는 모든 공격(Smurf, SYN Flooding 등)의 근본 대응책이 필터링 기법이라는 것을 기억하세요.
 
+### 4-12. 라우터 자체 보안 — 모드와 enable 패스워드
+
+**라우터 사용(접속) 모드 4가지**
+
+| 모드 | 설명 | 프롬프트 |
+|---|---|---|
+| User EXEC 모드 | 한정된 명령어만 사용 가능. 주로 라우터의 간단한 상태 조회 | `Router>` |
+| Privileged EXEC 모드 | 재부팅·라우팅 등 라우터에서의 모든 명령어 수행 가능(`enable` 명령으로 진입) | `Router#` |
+| Global Configuration 모드 | Privileged EXEC 모드에서 라우터 전반적 설정을 변경 | `Router(config)#` |
+| Other Configuration 모드 | 특정 인터페이스·특정 라우팅 등 세부 설정을 변경하는 모드 | `Router(config-mode)#` |
+
+**enable password vs enable secret (실무 핵심)**
+
+Privileged 모드로 전환할 때 사용하는 패스워드를 설정하는 명령어는 2가지이며, **안전한 운영을 위해 `enable secret` 사용을 권장**합니다.
+
+| 명령어 | 암호화 방식 | 특징 |
+|---|---|---|
+| `enable password <패스워드>` | 기본은 평문(Type 0) 저장. `service password-encryption` 명령을 실행하면 Type 7(역함수가 존재하여 원래의 평문 암호를 알 수 있는 방식)로 암호화 | 상대적으로 취약(가역적) |
+| `enable secret <패스워드>` | Type 5(일방향 함수로 암호화, MD5)의 암호문으로 저장되어 원래의 평문 암호를 알 수 없음 | 안전(비가역적) — **권장** |
+
+!!! important "핵심"
+    `enable password`와 `enable secret`이 함께 설정되어 있으면 **`enable secret`이 우선 적용**됩니다. [법·제도 파트](06-law-practice.md)의 "네트워크 장비 패스워드 암호화 확인(`show running-config`)" 기출 문제가 바로 이 내용과 연결됩니다 — 점검 시 `enable secret` 사용 여부, `username secret` 사용 여부, `service password-encryption` 동작 여부를 확인합니다.
+
+### 4-13. 네트워크 관리 명령어 (ping / traceroute)
+
+| 명령어 | 설명 |
+|---|---|
+| ping | 종단(End) 노드 간에 네트워크 상태를 관리하기 위한 명령어. Target 시스템에 대한 접근성, 네트워크 속도·품질(손실률)을 검사. **ICMP Echo Request(Type 8)와 ICMP Echo Reply(Type 0)** 메시지 이용 |
+| traceroute(Linux·Unix) / tracert(Windows) | 종단 노드 사이에 있는 여러 중계 노드(L3 장비·라우터) 각 구간의 네트워크 상태를 관리하기 위한 명령어로, 네트워크의 라우팅 문제점을 찾아내는 목적으로 사용 |
+
+!!! important "핵심 — traceroute와 tracert의 동작 원리 차이"
+    두 명령어의 목적지 도달 원리는 동일하지만(TTL 값을 1씩 증가시키며 중계 노드를 추적), **구현 방식에 차이**가 있습니다.
+
+    - **traceroute (Linux/Unix 계열)**: **UDP 패킷**(포트 33434 이상)을 전송하여 진단
+    - **tracert (Windows)**: **ICMP Echo Request** 패킷을 전송하여 진단
+
+**ping 명령 주요 옵션**
+
+| 플랫폼 | 옵션 | 의미 |
+|---|---|---|
+| Windows | `-n` | 패킷 전송 횟수 설정(default 4회) |
+| Windows | `-l` | 패킷 크기(bytes) 설정(default 32bytes) |
+| Linux | `-c` | 패킷 전송 횟수 설정(default 무한) |
+| Linux | `-s` | 패킷 크기(bytes) 설정(default 56bytes) |
+
 ## 5. IDS/IPS 및 보안 장비
 
 > 출제 이유: IDS의 탐지 오류 개념(FP/FN)과 IDS의 유형·행위는 매 회차 출제 빈도가 매우 높습니다.
@@ -459,3 +522,8 @@
 | VPN 계층별 프로토콜 | 2계층: PPTP(MS)/L2F(Cisco)/L2TP, 3계층: IPsec, 4계층: SSL/TLS |
 | ACL 표준/확장 | standard(1~99, 출발지만) / extended(100~199, 출발지+목적지+포트) |
 | 필터링 4유형 | Ingress(유입 검사)/Egress(유출 검사)/Blackhole(Null라우팅)/uRPF(왕복경로 확인) |
+| DRDoS | 반사(Reflection)+증폭(Amplification), TCP/ICMP/UDP(DNS·NTP·SNMP·CHARGEN) 3방식 |
+| 라우터 모드 4가지 | User EXEC(`>`) / Privileged EXEC(`#`) / Global Config / Other Config |
+| enable password vs secret | password=Type7(가역, 취약) / secret=Type5(MD5, 비가역, 권장·우선적용) |
+| ping | ICMP Echo Request(Type8)/Reply(Type0), Win -n/-l, Linux -c/-s |
+| traceroute vs tracert | traceroute(Linux/Unix)=UDP(33434+) / tracert(Windows)=ICMP |

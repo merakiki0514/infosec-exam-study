@@ -397,6 +397,27 @@ public String boardWrite(@ModelAttribute BoardModel boardModel, HttpSession sess
 !!! tip "암호화 대상 3가지"
     개인정보의 안전성 확보조치 기준 제7조에 따라 암호화해야 하는 핵심 대상은 **고유식별정보 / 비밀번호 / 생체인식정보**입니다("고/비/생"으로 암기).
 
+### 7-11. 위치 공개(Location Disclosure) 취약점
+
+| 항목 | 내용 |
+|---|---|
+| 정의 | 개발 과정 또는 소스코드를 수정하였을 경우 백업파일, 로그파일, 압축파일과 같은 파일이 자동적으로 생성되어 웹 애플리케이션 상에 노출될 경우, 공격자가 유추 후 직접 접근을 요청하여 해싱 정보를 획득할 수 있는 취약점(예: `source.tar.gz`처럼 개발 소스를 압축한 파일을 운영 서버에서 삭제하지 않아 외부에서 다운로드 가능) |
+| 대응 | 웹서버에 테스트 파일과 같은 불필요한 파일 삭제, 서비스와 관련 없는 디렉터리(백업 디렉터리 등)는 일반 사용자 접근이 불가능하도록 접근제어 수행 |
+| Apache 실무 설정 | `Files`·`FilesMatch` 지시자로 특정 확장자 파일에 대한 접근을 차단 — `<Files ~ "\.gz$">` / `<Files ~ "\.bak$">` 블록 안에서 `Order allow,deny` + `Deny from all` 설정. `FilesMatch`는 정규표현식을 사용한다는 의미 |
+
+```apache
+# .gz 파일에 대한 접근 차단
+<Files ~ "\.gz$">
+    Order allow,deny
+    Deny from all
+</Files>
+# .bak 파일에 대한 접근 차단
+<Files ~ "\.bak$">
+    Order allow,deny
+    Deny from all
+</Files>
+```
+
 ## 8. 웹 보안 도구
 
 ### 8-1. 웹 프록시 (24년도 1회, 26년도 1회)
@@ -458,6 +479,7 @@ public String boardWrite(@ModelAttribute BoardModel boardModel, HttpSession sess
 | 파일 다운로드 취약점 | 경로 파라미터 조작(../, ..\\)으로 임의 파일 다운로드 |
 | LFI vs RFI | Local(로컬 서버 파일) vs Remote(원격지 파일), PHP include/require |
 | OS Command Injection | `;`로 명령어 연결 삽입, system()/exec() 필터링 미흡 |
+| 위치공개 취약점 | 백업·로그·압축파일 노출 → Apache Files/FilesMatch 지시자로 확장자 차단 |
 | 쿠키 보안 3속성 | HttpOnly(JS 차단) / Secure(HTTPS만) / SameSite(CSRF 방지) |
 | HTTP Request Smuggling | Content-Length vs Transfer-Encoding 불일치 악용 |
 | HTTP 응답 분할 | CR(%0D) + LF(%0A) 삽입 |
