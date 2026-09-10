@@ -42,7 +42,9 @@ nav:
       - 4. 암호화·인증: concepts/04-crypto-auth.md
       - 5. 위험 관리: concepts/05-risk-management.md
       - 6. 법·제도 & 실무: concepts/06-law-practice.md
-      - 7. 최종 총정리: concepts/07-final-summary.md
+      - 7. 인프라 프로토콜 & 서비스: concepts/09-infra-protocols.md
+      - 8. 침해사고 분석 및 대응: concepts/08-incident-response.md
+      - 9. 최종 총정리: concepts/07-final-summary.md
   - 기출문제:
       - 2024년 1회: past-exams/2024-1.md
       - 2024년 2회: past-exams/2024-2.md

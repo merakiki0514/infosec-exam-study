@@ -21,11 +21,12 @@ PROGRESS_PATH = ROOT / "progress" / "progress.json"
 
 TOPIC_NAMES = {
     "network": "네트워크 보안",
-    "web": "웹 보안",
+    "web": "웹·애플리케이션 보안",
     "system": "시스템 보안",
     "crypto": "암호화·인증",
     "risk": "위험 관리",
     "law": "법·제도·실무",
+    "incident": "침해사고 분석·대응",
 }
 
 
@@ -171,7 +172,7 @@ def main():
     p_pick.add_argument("--topic", choices=list(TOPIC_NAMES.keys()))
     p_pick.add_argument("--count", type=int, default=10)
     p_pick.add_argument("--mode", choices=["normal", "review", "weak"], default="normal")
-    p_pick.add_argument("--source", choices=["기출", "예상", "all"], default="all")
+    p_pick.add_argument("--source", choices=["기출", "교재", "예상", "all"], default="all")
     p_pick.set_defaults(func=cmd_pick)
 
     p_record = sub.add_parser("record")
