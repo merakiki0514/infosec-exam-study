@@ -170,6 +170,37 @@
 
 **실무 명령어**: `lastlog -u <계정명>`(특정 계정의 최근 접속 기록), `lastlog -t <일수>`(해당 일수 이내 접속 기록), `lastb <계정명>`(특정 계정의 로그인 실패 기록), `last reboot | head -5`(재부팅 이력 확인)
 
+### 1-12. 시스템 런 레벨(Run Level)
+
+| 항목 | 내용 |
+|---|---|
+| 정의 | 시스템 운영 수준(실행 단계)을 말하며 여러 수준(단계)으로 구분. 관리자가 시스템 관리 편의성 목적으로 필요시 런 레벨을 변경하여 네트워크를 사용하지 못하게 하거나 일반 사용자의 접근을 차단하고 관리자만 접근하도록 할 수 있음 |
+| 설정 파일 | `/etc/inittab` — init 프로세스(PID 1)는 이 파일에 정의된 런 레벨에 따라 해당 런 레벨 디렉터리(`/etc/rc.d/rc[런레벨].d`)에 있는 스크립트를 실행하여 시스템 초기 환경(초기 프로세스)을 구성 |
+
+**런 레벨(리눅스 기준)**
+
+| Run Level | 시스템 운영 수준 |
+|---|---|
+| 0 | Halt(시스템 종지, 기본값으로 설정 불가) |
+| 1 | Single user mode — 네트워크 서비스 사용 안 함, 시스템 점검·복구·초기화 등 관리 목적(root 계정) |
+| 2 | Multiuser, without NFS — 네트워크를 사용하지 않는 다중 사용자 모드 |
+| 3 | Full multiuser mode — 네트워크를 지원하는 다중 사용자 모드(CLI 모드) |
+| 4 | Unused(사용 안 함) |
+| 5 | X11 — X-Window(GUI 환경)를 사용하는 다중 사용자 모드 |
+| 6 | reboot(시스템 재부팅, 기본값으로 설정 불가) |
+
+**런 레벨 디렉터리의 스크립트 명명 규칙**: `K` 로 시작하는 스크립트는 실행하지 않는(Kill) 스크립트, `S`로 시작하는 스크립트는 실행하는(Start) 스크립트. 숫자가 낮은 스크립트부터 먼저 실행(의존성 때문)
+
+**현재 런 레벨 확인 명령어**: Unix(SunOS) `who -r` / Linux `runlevel` (리눅스도 `who -r` 사용 가능) — `uname -a`는 유닉스·리눅스의 커널·배포판 기본 정보를 보여주는 명령어
+
+### 1-13. 리눅스 그룹 관리 명령어
+
+| 명령어 | 문법 | 설명 |
+|---|---|---|
+| 그룹 추가 | `groupadd [-g GID] group_name` | 새로운 그룹 생성. `-g` 옵션으로 그룹 ID 지정(미지정 시 자동 부여) |
+| 그룹 정보 변경 | `groupmod [-g GID] [-n new_name] group_name` | 기존 그룹의 GID 또는 이름 변경 |
+| 그룹 삭제 | `groupdel group_name` | 기존 그룹 삭제 |
+
 ## 2. 윈도우 보안 설정
 
 > 출제 이유: 윈도우 그룹 계정, UAC, 이벤트 로그 설정이 반복 출제됩니다.
@@ -274,6 +305,26 @@
 - ASLR (Address Space Layout Randomization): 메모리 주소를 무작위 배치하여 공격 어렵게 함
 - NX/DEP (No-Execute / Data Execution Prevention): 스택·힙 영역에서 코드 실행 불가
 - 안전한 라이브러리 함수 사용
+
+**스택 버퍼 오버플로우 공격 실습 코드 (개념 이해용)**
+
+```c
+shell_code() {
+    setreuid(0,0); setregid(0,0);   // ruid/euid, rgid/egid를 root(그룹)로 설정
+    system("/bin/sh");               // root 권한으로 쉘 실행
+}
+int main(int argc, char **argv) {
+    char buffer[12];                 // 크기 12byte인 버퍼
+    memset(buffer, 0x00, sizeof(buffer));
+    strcpy(buffer, argv[1]);         // 인자로 받은 문자열을 버퍼로 복사 (길이 검사 없음)
+    return 0;
+}
+```
+
+`strcpy()`는 입력받은 src 문자열의 크기를 검사하지 않으므로, argv[1]에 12byte를 초과하는 문자열을 전달하면 buffer 뒤에 있는 복귀 주소(Return Address)까지 덮어쓸 수 있다. 실제 공격은 공격자가 악의적인 실행 바이너리 코드(쉘 코드)를 메모리에 업로드한 후, 버퍼 오버플로우로 복귀 주소를 그 코드의 위치로 변경해 실행시키는 방식으로 이루어진다.
+
+!!! tip "argv 매개변수와 sizeof/strlen 차이"
+    C 언어에서 main 함수의 `argc`는 전달되는 매개변수의 개수, `argv`는 전달되는 문자열을 참조하는 배열이다(`argv[0]`=프로그램명, `argv[1]`부터 실제 인자). `sizeof()`는 버퍼(배열)에 할당된 전체 크기를 반환하고, `strlen()`은 널(`\0`) 문자를 제외한 문자열의 실제 길이를 반환한다는 차이를 기억하자.
 
 ### 3-3. APT & 사이버 킬 체인
 
@@ -464,3 +515,7 @@
 | 안티포렌식 2유형 | 데이터은폐(암호화·스테가노그래피) / 데이터파괴(디스크와이핑) |
 | Administrator 계정명 변경 | secpol.msc → 로컬 정책 → 보안 옵션 |
 | 윈도우 기본 공유 제거 | C$/D$/ADMIN$/IPC$ ($ = 숨겨진 공유), net share로 확인 |
+| 런 레벨 | 0=Halt, 1=단일사용자, 3=다중사용자CLI, 5=X11(GUI), 6=reboot |
+| 런레벨 확인 | Unix: who -r / Linux: runlevel |
+| 런레벨 스크립트 | K=Kill(미실행) / S=Start(실행), 숫자 낮은 순 실행 |
+| 그룹 관리 명령 | groupadd(-g GID) / groupmod(-g,-n) / groupdel |

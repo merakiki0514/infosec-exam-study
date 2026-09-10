@@ -269,6 +269,31 @@
 | 사설 무선랜 환경 | 일반 사용자가 무선 공유기를 통해 구축. 다양한 보안기술을 이용할 수 있지만 보안 설정에 대한 인식 부족 등으로 취약점 발생 가능 |
 | 기업 무선랜 환경 | 기업이 내부 업무용으로 구축. 최근 스마트폰을 이용한 스마트 오피스, 스마트 워크 등 도입 확산 |
 
+### 4-7a. 무선랜 암호화 표준 — IEEE 802.11i (WEP/WPA/WPA2)
+
+> 출제 이유: 무선랜 보안의 발전 과정(WEP→WPA→WPA2)과 각 방식의 암호 알고리즘을 묻는 문제가 출제됩니다. WPA와 WPA2를 구분하는 암호 알고리즘 명칭이 핵심입니다.
+
+IEEE 802.11i 표준은 초기 무선랜 보안 규격인 WEP의 취약성을 보완하기 위한 표준으로 2004년 제정되었다. 무선전송 데이터 암호 방식에 따라 WPA(WPA1)와 WPA2 버전으로 분류한다.
+
+| 표준 | 암호 방식 | 인증 방식(개인/기업) |
+|---|---|---|
+| WPA (WPA1) | **RC4-TKIP** (Temporal Key Integrity Protocol) | 개인(Personal): PSK(Pre-Shared Key) 모드 / 기업(Enterprise): 802.1x/EAP 모드(RADIUS 인증서버 이용) |
+| WPA2 | **AES-CCMP** (Counter mode with CBC-MAC Protocol) | 동일(PSK 또는 802.1x/EAP) |
+
+**TKIP (WPA/WPA1 암호 방식)**: WEP를 소프트웨어적으로 확장하는 방법을 사용함으로써 하드웨어 교체 없이 구현 가능하도록 설계. WEP와 동일하게 RC4 알고리즘 기반이며, 다음 4가지 보안기술로 WEP의 취약성을 보완: ① WEP의 24bit 초기벡터(IV)를 확장한 48bit IV 사용 ② IV의 순차적 증가 규칙 보완 ③ 키 믹싱(Key Mixing) 함수를 이용한 별도의 키 생성 과정 ④ 무결성 검사에 WEP의 CRC-32 대신 더 안전한 **MIC(Message Integrity Check)**를 각 패킷·프레임별 적용
+
+!!! warning "TKIP의 한계"
+    TKIP은 WEP의 취약점을 보완했지만 여전히 취약한 RC4 알고리즘을 사용하고, 무선 패킷 수집을 통한 키 크랙 공격 취약성을 그대로 가지고 있다는 한계가 있다(WPA2/AES-CCMP로의 전환이 권장되는 이유).
+
+**WPA/WPA2-PSK 인증(개인 모드) 동작 방식**
+
+1. 무선AP와 단말이 사전에 공유한 비밀키(접속 패스워드+SSID)로 **PSK(PMK)**를 각자 생성: `PSK(PMK) = PBKDF2(PW, SSID, SSID길이, 4096, 256)` — 입력값을 4096번 해시 반복하여 256bit 키 생성
+2. **4-way handshake** 과정을 통해 얻은 파라미터와 PSK(PMK)를 이용해 512bit **PTK**를 생성: `PTK = PRF-512(PSK(PMK), ..., AA, SA, ANonce, SNonce)`
+3. PTK로부터 KCK(메시지 인증용), KEK(그룹키 등 암호화용), TK(데이터 암호화용) 3개의 키가 파생됨
+4. 동일한 PTK가 생성되었는지는 MSG2·MSG3에서 주고받은 MIC값을 상호 검증하여 확인
+
+**WPA-PSK 인증방식 문제점**: 접속·인증 패스워드를 짧게 설정하거나 추측하기 쉬운 값으로 설정할 경우 사전 공격(Dictionary Attack)으로 쉽게 크랙될 수 있음. 4-way handshake 과정에서 PTK 생성에 사용되는 파라미터 중 PSK(PMK) 기반으로 생성한 값을 제외하고 모두 네트워크상에 평문 노출되므로, 공격자가 패스워드를 사전(Dictionary)에서 추측해 PSK(PMK)를 생성한 후, 노출된 파라미터로 PTK를 생성하고 노출된 MIC값과 대조하여 검증함으로써 패스워드를 크랙할 수 있음
+
 ### 4-8. IP(IPv4) 프로토콜 구조
 
 | 항목 | 내용 |
@@ -527,3 +552,6 @@ Privileged 모드로 전환할 때 사용하는 패스워드를 설정하는 명
 | enable password vs secret | password=Type7(가역, 취약) / secret=Type5(MD5, 비가역, 권장·우선적용) |
 | ping | ICMP Echo Request(Type8)/Reply(Type0), Win -n/-l, Linux -c/-s |
 | traceroute vs tracert | traceroute(Linux/Unix)=UDP(33434+) / tracert(Windows)=ICMP |
+| WPA vs WPA2 | WPA=RC4-TKIP / WPA2=AES-CCMP (802.11i 표준) |
+| TKIP 보완 4가지 | 48bit IV확장 / IV순차증가규칙 / 키믹싱 / MIC(WEP의 CRC-32 대체) |
+| WPA-PSK 취약점 | 4-way handshake 파라미터 노출 → 사전공격으로 패스워드 크랙 가능 |
