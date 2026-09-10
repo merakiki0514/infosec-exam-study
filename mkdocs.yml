@@ -1,0 +1,82 @@
+site_name: 정보보안기사 실기 스터디
+site_description: 정보보안기사 실기 시험 대비 개념 정리 · 기출문제 · 예상문제
+site_url: ""
+
+theme:
+  name: material
+  language: ko
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: 다크 모드로 전환
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: 라이트 모드로 전환
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+
+nav:
+  - 홈: index.md
+  - 학습 계획: study-plan.md
+  - 개념 정리:
+      - 1. 네트워크 보안: concepts/01-network.md
+      - 2. 웹 보안: concepts/02-web.md
+      - 3. 시스템 보안: concepts/03-system.md
+      - 4. 암호화·인증: concepts/04-crypto-auth.md
+      - 5. 위험 관리: concepts/05-risk-management.md
+      - 6. 법·제도 & 실무: concepts/06-law-practice.md
+      - 7. 최종 총정리: concepts/07-final-summary.md
+  - 기출문제:
+      - 2024년 1회: past-exams/2024-1.md
+      - 2024년 2회: past-exams/2024-2.md
+      - 2024년 4회: past-exams/2024-4.md
+      - 2025년 1회: past-exams/2025-1.md
+      - 2025년 2회: past-exams/2025-2.md
+      - 2025년 4회: past-exams/2025-4.md
+      - 2026년 1회: past-exams/2026-1.md
+  - 예상문제: predicted/predicted-questions.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - attr_list
+  - md_in_html
+
+plugins:
+  - search:
+      lang: ko
+
+extra:
+  social: []

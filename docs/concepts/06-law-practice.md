@@ -1,0 +1,267 @@
+# 파트 6. 법·제도 & 실무형 문제
+
+법·제도 파트는 정보보호관련 법률과 제도의 핵심 조항을 암기하고, 실무형 문제는 설정 파일·코드·로그를 직접 분석·작성하는 능력을 요구합니다.
+
+## 1. 주요 법률 및 제도
+
+### 1-1. 전자금융거래법 (24년도 4회)
+
+| 항목 | 내용 |
+|---|---|
+| CISO (정보보호최고책임자) | 전자금융거래법에서 규정하는 금융회사의 정보보호 업무를 총괄하는 최고 책임자 / 금융 분야의 정보보호 전략 수립·이행·감독 담당 |
+| 관련 의무 | 정보보호 계획 수립·이행·개선 / 정기 감사 / 위험 식별·평가 / 교육·훈련 |
+
+### 1-2. 정보통신망법
+
+| 항목 | 내용 |
+|---|---|
+| 집적정보통신시설 사업자 (26년도 1회) | 인터넷 데이터센터(IDC) 등 정보통신시설을 집적하여 운영·관리하는 사업자. 정보통신망법에서 특별한 보호 의무 부여 |
+| 정보통신망 정의 (25년도 2회) | 전기통신사업법에 따른 전기통신설비를 이용하거나 전기통신설비와 컴퓨터 및 컴퓨터의 이용기술을 활용하여 정보를 수집·가공·저장·검색·송신·수신하는 정보통신체제 |
+
+### 1-3. 소프트웨어 패치 관련 용어 (24년도 4회)
+
+| 용어 | 정의 |
+|---|---|
+| 핫픽스 (Hot Fix) | 제품 사용 중 발생하는 버그 수정, 취약점 보완, 성능 향상을 위해 긴급하게 배포하는 패치 프로그램 |
+| 업데이트 (Update) | 문제 예방·해결 또는 성능 향상을 위해 추가되는 소프트웨어 패키지 |
+| 서비스팩 (Service Pack) | 여러 핫픽스와 업데이트를 묶어 배포하는 누적 패치 패키지 |
+
+### 1-4. 정보보호 대책 구분 (25년도 4회)
+
+| 구분 | 설명 / 예시 |
+|---|---|
+| 물리적 접근 통제 | 물리적 침입·접근을 제한하는 대책 / 예: 출입 통제 시스템, CCTV, 잠금장치, 보안 경비, 보호구역 지정 |
+| 논리적 접근 통제 | 시스템·네트워크 자원에 대한 전자적 접근 제어 / 예: 패스워드, 방화벽, ACL, 암호화, 생체인식 |
+
+## 2. 보안 설정 파일 실무
+
+> 출제 이유: 실무에서 사용하는 설정 파일 경로와 파라미터를 정확히 알아야 실무형 문제를 풀 수 있습니다.
+
+### 2-1. iptables 설정 (26년도 1회)
+
+**ICMP Echo Request 차단 명령**
+
+```
+iptables -A INPUT -p (A) --icmp-type (B) -j (C)
+
+정답:
+(A) icmp
+(B) echo-request (또는 타입 번호 8)
+(C) DROP (또는 REJECT) — 반드시 대문자 사용
+
+전체 명령: iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
+```
+
+**iptables 주요 옵션**
+
+| 옵션 | 설명 |
+|---|---|
+| -A (--append) | 체인 끝에 규칙 추가 |
+| -I (--insert) | 체인 처음 또는 지정 위치에 규칙 삽입 |
+| -D (--delete) | 규칙 삭제 |
+| -p (--protocol) | 프로토콜 지정 (tcp, udp, icmp 등) |
+| --dport | 목적지 포트 지정 |
+| -j (--jump) | 타깃 지정 (ACCEPT, DROP, REJECT, LOG) |
+| -s | 출발지 IP 지정 |
+| -d | 목적지 IP 지정 |
+
+### 2-2. sendmail 스팸 메일 및 릴레이 차단 (24년도 1회, 26년도 1회)
+
+| 설정 파일 | 역할 |
+|---|---|
+| sendmail.cf (26년도 1회) | sendmail 메인 설정 파일 |
+| access (26년도 1회) | 메일 릴레이·차단 규칙 정의 파일 (/etc/mail/access) |
+| access.db (26년도 1회) | access 파일을 makemap으로 컴파일한 DB 파일 |
+
+**access 파일 설정 예시 (24년도 1회)**
+
+```
+kca.or.kr    RELAY      ← kca.or.kr 도메인 메일 릴레이 허용
+spam.com     DISCARD    ← spam.com 도메인 메일 폐기
+```
+
+주요 액션: `RELAY`(릴레이 허용) / `DISCARD`(메시지 폐기, 발신자에게 오류 없음) / `REJECT`(메일 거부, 발신자에게 오류 반환) / `OK`(수신 허용)
+
+### 2-3. Apache 보안 설정
+
+| 설정 | 내용 |
+|---|---|
+| 디렉터리 리스팅 차단 (25년도 2회) | Options 지시자에서 Indexes 삭제 / 예: `Options -Indexes` |
+| URL Rewrite 모듈 (26년도 1회) | URL Rewrite Module: Apache/IIS에서 URL 재작성 규칙을 적용하는 확장 모듈. 악성 URL 패턴 차단에 활용 |
+| ServerTokens | 웹 서버 버전 정보 노출 방지. `ServerTokens Prod` 설정 |
+| ServerSignature | 오류 페이지 하단의 서버 정보 표시 제거. `ServerSignature Off` |
+
+### 2-4. 네트워크 장비 패스워드 암호화 확인 (25년도 4회)
+
+**확인 명령어**: `show running-config`
+
+**확인 사항**
+
+1. `enable secret` 사용 여부 (`enable password` 대신 `enable secret` 사용 — MD5 해시 암호화)
+2. `username secret` 사용 여부 (`username password` 대신 `username secret` 사용)
+3. `service password-encryption` 서비스 동작 여부 (Type 7 암호화 적용)
+
+## 3. 윈도우 서비스 로그 파일 (26년도 1회)
+
+| 로그 파일 | 설명 |
+|---|---|
+| HTTPERR | IIS 웹 서버의 HTTP 오류 로그 파일. 요청 처리 오류 기록 |
+| dhcp | DHCP 서비스 로그 파일. IP 주소 할당 이력 기록 |
+| 이벤트 로그 | Windows 이벤트 뷰어(eventvwr.msc)에서 확인. 시스템·보안·애플리케이션 로그 |
+
+## 4. 실무형 코드 분석 문제
+
+> 출제 이유: 18번 문제 유형으로 코드를 보고 취약점을 식별하고 안전한 코드를 작성하는 능력을 평가합니다.
+
+### 4-1. SQL Injection 안전한 코드 작성 (24년도 4회, 25년도 4회)
+
+**취약한 코드**
+
+```java
+String gubun = request.getParameter("gubun");
+String sql = "SELECT * FROM board WHERE b_gubun = '" + gubun + "'";
+Connection con = db.getConnection();
+Statement stmt = con.createStatement();
+ResultSet rs = stmt.executeQuery(sql);
+// [문제점] gubun 파라미터에 SQL 구문 삽입 가능
+// 예: gubun = ' OR '1'='1 입력 시 모든 레코드 조회
+```
+
+**안전한 코드**
+
+```java
+String gubun = request.getParameter("gubun");
+String sql = "SELECT * FROM board WHERE b_gubun = ?";        // ← (A) ?
+Connection con = db.getConnection();
+PreparedStatement pstmt = con.prepareStatement(sql);          // ← (B)
+pstmt.setString(1, gubun);                                    // ← (C)
+ResultSet rs = pstmt.executeQuery();                          // ← (D)
+// [원리] ?는 플레이스홀더 → SQL과 데이터를 완전히 분리
+// → 입력값이 순수 문자열 데이터로만 처리됨
+```
+
+### 4-2. CSRF 취약점 분석 (26년도 1회)
+
+```java
+@RequestMapping("/write.do")
+public String boardWrite(@ModelAttribute BoardModel boardModel, HttpSession session) {
+    // 난수 형태의 토큰을 생성하여 세션에 저장
+    session.setAttribute("SESSION_CSRF_TOKEN", UUID.randomUUID().toString());
+    return "/board/write";
+}
+// 생성한 토큰을 작업(입력) 페이지에 히든 필드의 값으로 전달
+```
+
+**분석**: 취약점 = CSRF (Cross-Site Request Forgery) / 방어 메커니즘 = UUID 기반 CSRF 토큰을 세션에 저장하고 입력 폼의 히든 필드로 전달 → 요청 시 토큰과 세션 저장 토큰 비교하여 정상 경로 요청 검증
+
+**CSRF 공격 정의**: 웹 애플리케이션이 정상 경로 요청과 비정상 경로 요청을 구분하지 못할 때, 공격자가 인증된 사용자의 권한으로 의도하지 않은 요청(설정 변경, 회원정보 변경, 게시물 등록 등)을 실행하도록 하는 공격 기법
+
+### 4-3. 웹 프록시(피들러) 분석 (26년도 1회)
+
+| 상황 | 분석 / 답안 |
+|---|---|
+| HTTPS 복호화 실패 (그림 1) | 오류 원인: 피들러 프록시의 루트 CA 인증서가 브라우저/OS의 신뢰된 인증서 저장소에 설치되지 않아 SSL 인증서 검증 실패 / 해결: 피들러 CA 인증서를 브라우저/OS 신뢰된 루트 인증서로 설치 |
+| title 태그에 alert 스크립트 삽입 (그림 2) | 점검 취약점: XSS (Cross-Site Scripting) / 대응: HTML 출력 전 사용자 입력값을 HTML 엔티티로 인코딩 (예: `<` → `&lt;`, `>` → `&gt;`, `&` → `&amp;`, `"` → `&quot;`) |
+
+### 4-4. 파일 업로드 취약점 분석 (25년도 2회)
+
+| 항목 | 내용 |
+|---|---|
+| 취약점 식별 | Content-Type(MIME 타입)만 검증하고 실제 파일 확장자 검증 없음 → 파일 업로드 취약점 |
+| 우회 기법 | 웹쉘(.php) 업로드 시 HTTP 요청의 Content-Type 헤더를 image/gif 등 허용된 이미지 타입으로 변조 |
+| 공격 성공 조건 (2가지) | 1. 업로드 디렉터리에서 URL로 파일 직접 접근(호출) 가능 / 2. 업로드된 스크립트 파일에 서버 사이드 실행 권한 존재 |
+
+### 4-5. SQL Injection 공격 분석 (25년도 4회)
+
+```
+입력값: ' OR '1'='1
+
+원래 쿼리: SELECT * FROM member WHERE id='user1' AND pw='입력값'
+조작된 쿼리: SELECT * FROM member WHERE id='user1' AND pw='' OR '1'='1'
+```
+
+**분석**: 1) member 테이블에서 ID가 user1인 사용자의 PW 정보를 확인 가능 (WHERE 조건 항상 참) / 2) 이 공격은 SQL Injection 공격 / 3) 삽입된 SQL 구문: `' OR '1'='1`
+
+## 5. 리눅스 실무 보안 점검
+
+### 5-1. 로그인 배너 설정 (25년도 1회)
+
+| 항목 | 내용 |
+|---|---|
+| 보안 취약점 | 로그인 배너가 없으면 서버 OS 버전·서비스 버전이 공격자에게 노출 → 해당 버전의 취약점을 이용한 공격 시도 가능 |
+| telnet 배너 설정 | `/etc/issue.net` 파일에 적절한 로그인 배너 메시지 설정 후 재시작 |
+| vsftpd 배너 설정 | `/etc/vsftpd/vsftpd.conf`에서 `ftpd_banner` 지시자에 배너 메시지 설정 후 재시작 |
+
+### 5-2. DB 접근권한 최소화 (24년도 2회)
+
+**DBA가 일반 사용자·원격 접속 사용자에게 부여하면 안 되는 권한 3가지**
+
+- DBA 권한 (DB 전체 관리 권한)
+- 계정 생성·삭제 권한 (CREATE USER, DROP USER 등)
+- ALL PRIVILEGES (전체 권한)
+
+**DB 접근권한 최소화 방안 4가지**
+
+- 업무에 필요한 최소 권한만 부여 (최소 권한 원칙, Least Privilege)
+- 불필요한 기본 계정·기본 패스워드 변경 또는 삭제
+- 원격 접속 시 암호화 통신 (SSL/TLS) 적용
+- DB 접근 이력 로깅 및 주기적 감사 수행
+
+### 5-3. DB 민감정보 마스킹 방식 (25년도 4회)
+
+| 방식 | 설명 |
+|---|---|
+| SQL 변조 마스킹 방식 | SQL을 파싱하여 조회 전 단계에서 마스킹 처리. DB 서버에 직접 접근하는 요청을 중간에서 변조 |
+| 조회 결과 변조 마스킹 방식 | SQL을 미리 컴파일하여 조회 결과를 자동으로 마스킹하는 방식 |
+
+## 6. 보안관제 관련
+
+### 6-1. SIEM (26년도 1회)
+
+| 항목 | 내용 |
+|---|---|
+| 정의 | 다양한 보안 장비·서버의 로그와 이벤트를 실시간으로 수집·상관 분석하여 보안 위협을 통합 관제하는 시스템 |
+| 핵심 기능 | 로그 통합 수집 / 실시간 모니터링 / 상관 분석(Correlation) / 경보 / 보고서 |
+| 대표 제품 | IBM QRadar, Splunk, ArcSight |
+
+### 6-2. 보안관제 구성요소 3가지 (25년도 2회)
+
+| 구성요소 | 역할 |
+|---|---|
+| 에이전트 (Agent) | 보안 장비·서버·네트워크에 설치. 로그를 실시간으로 중앙관제센터로 전송 |
+| 정보수집 서버 | 에이전트에서 수집한 대량 정보를 처리하여 DB에 저장 |
+| 통합관제용 서버 (SMS) | 이벤트 로그 분석, 종합적 상관 분석으로 관제 담당자 지원 및 경보 발령 |
+
+### 6-3. DLP (Data Loss Prevention) (25년도 2회)
+
+| 항목 | 내용 |
+|---|---|
+| 정의 | 조직 내 중요 데이터(개인정보, 기밀 정보 등)가 외부로 유출되는 것을 탐지·차단하는 솔루션 |
+| 적용 위치 | 네트워크 DLP: 네트워크를 통한 데이터 유출 탐지·차단 / 엔드포인트 DLP: 사용자 PC에서 USB, 이메일, 프린터 등을 통한 유출 차단 |
+
+## 7. 파일시스템 보안
+
+| 항목 | 내용 |
+|---|---|
+| NTFS (윈도우) (25년도 2회) | New Technology File System. 윈도우의 기본 파일시스템 / 파일·디렉터리 수준의 ACL 기반 접근 제어 / 파일 암호화(EFS) / 압축 / 저널링 / 대용량 파일 지원 |
+| E2EE (종단간 암호화) (25년도 2회) | End-to-End Encryption. 송신자부터 수신자까지 중간 경로에서 복호화 없이 전달되는 암호화 방식. 서버도 내용 볼 수 없음. 예: Signal, WhatsApp |
+
+## 8. 실무형 문제 핵심 암기 표
+
+| 주제 | 핵심 키워드 / 정답 |
+|---|---|
+| iptables ICMP 차단 | `-p icmp --icmp-type echo-request -j DROP` (대문자 DROP/REJECT 필수) |
+| sendmail access 파일 | RELAY=허용 / DISCARD=폐기 / REJECT=거부 |
+| sendmail 설정 파일 3가지 | sendmail.cf → access → access.db |
+| Apache 디렉터리 리스팅 차단 | Options 지시자에서 Indexes 삭제 |
+| SQL Injection 안전 코드 핵심 | PreparedStatement + ? 플레이스홀더 + setString() |
+| CSRF 방어 메커니즘 | UUID 토큰 생성 → 세션 저장 → 히든 필드 전달 → 요청 시 비교 검증 |
+| 피들러 HTTPS 오류 | 피들러 CA 인증서를 신뢰 저장소에 미설치 → 설치로 해결 |
+| 파일 업로드 우회 | Content-Type을 image/gif 등으로 변조 |
+| DB 부여 금지 권한 3가지 | DBA권한 / 계정생성삭제권한 / ALL PRIVILEGES |
+| DB 최소화 방안 4가지 | 최소권한 / 기본계정삭제 / 암호화통신 / 로깅·감사 |
+| SIEM vs SOAR | SIEM=탐지중심 / SOAR=탐지+자동대응 |
+| DLP 목적 | 중요 데이터 외부 유출 탐지·차단 |
+| NTFS | ACL기반 접근제어, EFS 파일암호화, 저널링 지원 |
+| E2EE | 송신자~수신자 전 구간 암호화, 서버도 복호화 불가 |
+| 로그인 배너 설정 | telnet: /etc/issue.net / vsftpd: ftpd_banner |
