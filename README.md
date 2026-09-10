@@ -21,7 +21,7 @@ docs/                   # MkDocs Material 사이트 콘텐츠
   past-exams/             # 24~26년 기출문제 7개년 원문 + 모범답안
   predicted/               # 출제 트렌드 기반 예상문제
   study-plan.md             # 4주 학습 로드맵
-data/questions.json      # 구조화된 문제 데이터베이스 (기출 120 + 교재기반 82 + 예상 30, 총 232문항)
+data/questions.json      # 구조화된 문제 데이터베이스 (기출 120 + 교재기반 100 + 예상 30, 총 250문항)
 scripts/quiz.py           # 문제 선택 / 채점 기록 / 통계 CLI (daily 학습 스킬이 사용)
 progress/progress.json    # 학습 이력 (문제별 정답률, 세션 기록)
 .claude/skills/study/      # Claude Code용 `/study` 일일 학습 스킬
